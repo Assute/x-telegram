@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         x-telegram
 // @namespace    x-telegram-uploader-v2
-// @version      1.3.0
+// @version      1.4.0
 // @description  在 X 推文操作栏添加下载按钮，服务器下载媒体并上传到 Telegram，同时保留完整推文文案
 // @author       x-telegram
 // @match        https://x.com/*
@@ -290,7 +290,34 @@
     processedArticles.add(article);
   }
 
-  function scan() { document.querySelectorAll('article').forEach(inject); }
+  function injectLikesTab() {
+    if (document.querySelector('[data-xtu-likes-tab]')) return;
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    if (!pathParts.length || ['i', 'explore', 'messages', 'notifications'].includes(pathParts[0])) return;
+    const username = pathParts[0].replace(/^@/, '');
+    if (!username || pathParts[1] === 'status') return;
+    const tablist = [...document.querySelectorAll('[role="tablist"], nav')].find((element) => {
+      const links = [...element.querySelectorAll('a[href]')];
+      return links.some((link) => /\/(with_replies|media|video|retweets)(?:\?|$)/.test(link.getAttribute('href') || '') || link.getAttribute('href') === '/' + username);
+    });
+    if (!tablist) return;
+    if ([...tablist.querySelectorAll('a[href]')].some((link) => /\/likes(?:\?|$)/.test(link.getAttribute('href') || ''))) return;
+    const source = [...tablist.querySelectorAll('a[href]')].find((link) => /\/(video|media|retweets|with_replies)(?:\?|$)/.test(link.getAttribute('href') || '')) || tablist.querySelector('a[href]');
+    if (!source) return;
+    const likes = source.cloneNode(true);
+    likes.setAttribute('href', '/' + username + '/likes');
+    likes.setAttribute('data-xtu-likes-tab', 'true');
+    likes.setAttribute('aria-label', '喜欢');
+    likes.removeAttribute('aria-current');
+    likes.querySelectorAll('[aria-hidden="true"]').forEach((node) => node.remove());
+    likes.textContent = '喜欢';
+    source.parentElement?.insertAdjacentElement('afterend', likes);
+  }
+
+  function scan() {
+    injectLikesTab();
+    document.querySelectorAll('article').forEach(inject);
+  }
   new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });
   scan();
 })();
