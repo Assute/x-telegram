@@ -13,7 +13,7 @@ const telegramApiBaseUrl = (process.env.TELEGRAM_API_BASE_URL || 'http://127.0.0
 const botToken = process.env.TELEGRAM_BOT_TOKEN || '';
 const defaultChannelId = process.env.DEFAULT_CHANNEL_ID || '';
 const extensionAccessToken = process.env.EXTENSION_ACCESS_TOKEN || '';
-const maxUploadBytes = Number(process.env.MAX_UPLOAD_BYTES || 2147483648);
+const maxUploadBytes = Number(process.env.MAX_UPLOAD_BYTES || 10737418240);
 const allowedMediaHosts = new Set(['video.twimg.com', 'pbs.twimg.com']);
 const uploadJobs = new Map();
 
@@ -192,6 +192,7 @@ const server = createServer(async (request, response) => {
   }
 });
 server.listen(port, '0.0.0.0', () => console.log(`x-telegram server listening on :${port}`));
+
 
 
 

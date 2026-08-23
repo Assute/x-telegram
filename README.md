@@ -80,7 +80,7 @@ TELEGRAM_API_BASE_URL=http://127.0.0.1:8081
 TELEGRAM_BOT_TOKEN=你的BotToken
 DEFAULT_CHANNEL_ID=-1001234567890
 EXTENSION_ACCESS_TOKEN=设置一个访问密钥
-MAX_UPLOAD_BYTES=2147483648
+MAX_UPLOAD_BYTES=10737418240
 ```
 
 Bot 必须已经加入目标频道或群组，并具有发送媒体权限。
@@ -146,5 +146,6 @@ npm start
 apt update
 apt install -y subversion
 ```
+
 
 
