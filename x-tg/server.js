@@ -1,5 +1,6 @@
 ﻿import 'dotenv/config';
 import { createServer, request as httpRequest } from 'node:http';
+import { spawn } from 'node:child_process';
 import { request as httpsRequest } from 'node:https';
 import { randomUUID } from 'node:crypto';
 import { createReadStream, createWriteStream } from 'node:fs';
@@ -63,20 +64,20 @@ async function downloadRemoteMedia(mediaUrl, filePath) {
   return { size: total, contentType: remote.headers.get('content-type') || 'application/octet-stream', fileName: safeFileName(url.pathname.split('/').pop()) };
 }
 
-async function postMultipartFile(urlString, fields, fieldName, filePath, fileName, contentType) {
+async function postMultipartFiles(urlString, fields, files) {
   const url = new URL(urlString);
   const boundary = `----xTelegramBoundary${randomUUID().replaceAll('-', '')}`;
-  const fileStats = await stat(filePath);
   const fieldParts = Object.entries(fields).map(([key, value]) => Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`));
-  const fileHeader = Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${fieldName}"; filename="${fileName}"\r\nContent-Type: ${contentType}\r\n\r\n`);
+  const fileParts = await Promise.all(files.map(async ({ fieldName, filePath, fileName, contentType }) => ({
+    header: Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${fieldName}"; filename="${fileName}"\r\nContent-Type: ${contentType}\r\n\r\n`),
+    size: (await stat(filePath)).size,
+    filePath
+  })));
   const fileTail = Buffer.from(`\r\n--${boundary}--\r\n`);
-  const contentLength = fieldParts.reduce((total, part) => total + part.length, 0) + fileHeader.length + fileStats.size + fileTail.length;
+  const contentLength = fieldParts.reduce((total, part) => total + part.length, 0) + fileParts.reduce((total, part) => total + part.header.length + part.size, 0) + Math.max(0, fileParts.length - 1) * 2 + fileTail.length;
   const requestImpl = url.protocol === 'https:' ? httpsRequest : httpRequest;
   return new Promise((resolve, reject) => {
-    const request = requestImpl(url, {
-      method: 'POST',
-      headers: { 'content-type': `multipart/form-data; boundary=${boundary}`, 'content-length': contentLength }
-    }, (response) => {
+    const request = requestImpl(url, { method: 'POST', headers: { 'content-type': `multipart/form-data; boundary=${boundary}`, 'content-length': contentLength } }, (response) => {
       const chunks = [];
       response.on('data', (chunk) => chunks.push(chunk));
       response.on('end', () => {
@@ -88,16 +89,32 @@ async function postMultipartFile(urlString, fields, fieldName, filePath, fileNam
       });
     });
     request.on('error', reject);
-    for (const part of fieldParts) request.write(part);
-    request.write(fileHeader);
-    const fileStream = createReadStream(filePath);
-    fileStream.on('error', (error) => { request.destroy(error); });
-    fileStream.on('end', () => { request.write(fileTail); request.end(); });
-    fileStream.pipe(request, { end: false });
+    const writeFile = (file) => new Promise((resolveFile, rejectFile) => {
+      request.write(file.header);
+      const fileStream = createReadStream(file.filePath);
+      fileStream.on('error', rejectFile);
+      fileStream.on('end', resolveFile);
+      fileStream.pipe(request, { end: false });
+    });
+    (async () => {
+      try { for (const part of fieldParts) request.write(part); for (const [index, file] of fileParts.entries()) { await writeFile(file); if (index < fileParts.length - 1) request.write('\r\n'); } request.write(fileTail); request.end(); }
+      catch (error) { request.destroy(error); reject(error); }
+    })();
   });
 }
 
-async function sendToTelegram(filePath, contentType, fileName, mediaType, channelId, caption) {
+async function postMultipartFile(urlString, fields, fieldName, filePath, fileName, contentType) {
+  return postMultipartFiles(urlString, fields, [{ fieldName, filePath, fileName, contentType }]);
+}
+
+async function createVideoThumbnail(videoPath, thumbnailPath) {
+  await new Promise((resolve, reject) => {
+    const ffmpeg = spawn('ffmpeg', ['-y', '-ss', '1', '-i', videoPath, '-frames:v', '1', '-vf', 'scale=320:-2', '-q:v', '5', thumbnailPath], { stdio: 'ignore' });
+    ffmpeg.once('error', (error) => reject(new Error(`生成视频封面失败，请安装 ffmpeg：${error.message}`)));
+    ffmpeg.once('exit', (code) => code === 0 ? resolve() : reject(new Error(`生成视频封面失败：ffmpeg exit ${code}`)));
+  });
+}
+async function sendToTelegram(filePath, contentType, fileName, mediaType, channelId, caption, thumbnailPath) {
   if (!botToken) throw new Error('服务器未配置 TELEGRAM_BOT_TOKEN');
   if (!channelId) throw new Error('未配置 Telegram 频道 ID');
   const isVideo = mediaType === 'video';
@@ -106,11 +123,9 @@ async function sendToTelegram(filePath, contentType, fileName, mediaType, channe
   if (!isVideo && !isAnimation && !isPhoto) throw new Error('不支持的媒体类型');
   const method = isVideo ? 'sendVideo' : isAnimation ? 'sendAnimation' : 'sendPhoto';
   const fieldName = isVideo ? 'video' : isAnimation ? 'animation' : 'photo';
-  return postMultipartFile(`${telegramApiBaseUrl}/bot${botToken}/${method}`, {
-    chat_id: channelId,
-    caption: caption.slice(0, 1024),
-    ...(isVideo ? { supports_streaming: 'true' } : {})
-  }, fieldName, filePath, fileName, contentType);
+  const files = [{ fieldName, filePath, fileName, contentType }];
+  if (isVideo && thumbnailPath) files.push({ fieldName: 'thumbnail', filePath: thumbnailPath, fileName: 'thumbnail.jpg', contentType: 'image/jpeg' });
+  return postMultipartFiles(`${telegramApiBaseUrl}/bot${botToken}/${method}`, { chat_id: channelId, caption: caption.slice(0, 1024), ...(isVideo ? { supports_streaming: 'true' } : {}) }, files);
 }
 async function runUploadJob(taskId, payload) {
   let temporaryDirectory;
@@ -133,7 +148,9 @@ async function runUploadJob(taskId, payload) {
     const { rename } = await import('node:fs/promises');
     await rename(rawPath, storedPath);
     update('telegram', { bytes: downloaded.size });
-    const message = await sendToTelegram(storedPath, downloaded.contentType, fileName, payload.mediaType || 'image', defaultChannelId, payload.caption || (payload.tweetUrl ? `来自 X：${payload.tweetUrl}` : '来自 X 的媒体'));
+    const thumbnailPath = payload.mediaType === 'video' ? join(temporaryDirectory, 'thumbnail.jpg') : null;
+    if (thumbnailPath) await createVideoThumbnail(storedPath, thumbnailPath);
+    const message = await sendToTelegram(storedPath, downloaded.contentType, fileName, payload.mediaType || 'image', defaultChannelId, payload.caption || (payload.tweetUrl ? `来自 X：${payload.tweetUrl}` : '来自 X 的媒体'), thumbnailPath);
     update('completed', { bytes: downloaded.size, telegramMessageId: message.message_id, mediaType: payload.mediaType || 'image' });
   } catch (error) {
     console.error('[upload]', error.message);

@@ -84,6 +84,15 @@ MAX_UPLOAD_BYTES=2147483648
 ```
 
 Bot 必须已经加入目标频道或群组，并具有发送媒体权限。
+视频封面需要服务器安装 `ffmpeg`：
+
+```bash
+apt update
+apt install -y ffmpeg
+ffmpeg -version
+```
+
+后端会在上传视频前自动截取视频第 1 秒的画面作为 Telegram 缩略图。
 ## 安装 Chrome 插件
 
 1. 先启动 Telegram Local Bot API 和 `x-tg` 后端。
@@ -137,4 +146,5 @@ npm start
 apt update
 apt install -y subversion
 ```
+
 
