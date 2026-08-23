@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         x-telegram
 // @namespace    x-telegram-uploader-v2
-// @version      1.4.1
+// @version      1.4.2
 // @description  在 X 推文操作栏添加下载按钮，服务器下载媒体并上传到 Telegram，同时保留完整推文文案
 // @author       x-telegram
 // @match        https://x.com/*
