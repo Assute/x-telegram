@@ -298,11 +298,11 @@
     if (!username || pathParts[1] === 'status') return;
     const tablist = [...document.querySelectorAll('[role="tablist"], nav')].find((element) => {
       const links = [...element.querySelectorAll('a[href]')];
-      return links.some((link) => /\/(with_replies|media|video|retweets)(?:\?|$)/.test(link.getAttribute('href') || '') || link.getAttribute('href') === '/' + username);
+      return links.some((link) => /\/(with_replies|media|video|reposts|retweets)(?:\?|$)/.test(link.getAttribute('href') || '') || link.getAttribute('href') === '/' + username);
     });
     if (!tablist) return;
     if ([...tablist.querySelectorAll('a[href]')].some((link) => /\/likes(?:\?|$)/.test(link.getAttribute('href') || ''))) return;
-    const source = [...tablist.querySelectorAll('a[href]')].find((link) => /\/(video|media|retweets|with_replies)(?:\?|$)/.test(link.getAttribute('href') || '')) || tablist.querySelector('a[href]');
+    const source = [...tablist.querySelectorAll('a[role="tab"][href]')].find((link) => /\/(video|media|reposts|retweets|with_replies)(?:\?|$)/.test(link.getAttribute('href') || '')) || tablist.querySelector('a[role="tab"][href]');
     if (!source) return;
     const likes = source.cloneNode(true);
     likes.setAttribute('href', '/' + username + '/likes');
@@ -311,6 +311,7 @@
     likes.removeAttribute('aria-current');
     likes.querySelectorAll('[aria-hidden="true"]').forEach((node) => node.remove());
     likes.textContent = '喜欢';
+    likes.setAttribute('role', 'tab');
     source.parentElement?.insertAdjacentElement('afterend', likes);
   }
 

@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "x-telegram",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "description": "在 X 媒体上添加上传到 Telegram 的按钮。",
     "permissions": [
         "storage",
