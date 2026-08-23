@@ -124,7 +124,6 @@ async function uploadMedia(article, button) {
       if (!result?.ok) throw new Error(result?.error || '上传失败');
     }
     setButtonState(button, 'success', `已上传 ${mediaItems.length} 个媒体到 Telegram`);
-    window.setTimeout(() => setButtonState(button, 'idle', '上传推文媒体到 Telegram'), 2500);
   } catch (error) {
     console.error('[x-telegram]', error);
     setButtonState(button, 'error', error.message || '上传失败，点击重试');

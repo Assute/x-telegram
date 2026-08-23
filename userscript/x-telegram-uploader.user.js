@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         x-telegram
 // @namespace    x-telegram-uploader-v2
-// @version      1.2.2
+// @version      1.3.0
 // @description  在 X 推文操作栏添加下载按钮，服务器下载媒体并上传到 Telegram，同时保留完整推文文案
 // @author       x-telegram
 // @match        https://x.com/*
@@ -252,7 +252,6 @@
         }
       }
       setState(button, 'success', `已上传 ${tweet.media.length} 个媒体到 Telegram`);
-      setTimeout(() => setState(button, 'idle', '上传推文媒体到 Telegram'), 2500);
     } catch (error) {
       console.error('[x-telegram]', error);
       setState(button, 'error', error.message || '上传失败，点击重试');
