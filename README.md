@@ -90,3 +90,31 @@ Bot 必须已经加入目标频道或群组，并具有发送媒体权限。
 - 视频优先选择 X 提供的最高码率资源。
 - 上传过程中图标会区分 URL 提交、服务器下载和 Telegram 上传阶段。
 - Telegram Bot Token 只放在服务器 `x-tg/.env`，不要写进插件或油猴脚本。
+
+## 仅部署 `x-tg` 后端
+
+如果服务器不需要 Chrome 插件和油猴脚本，可以只检出仓库中的 `x-tg` 文件夹：
+
+```bash
+cd /opt
+svn checkout https://github.com/Assute/x-telegram/trunk/x-tg x-tg
+cd /opt/x-tg
+npm install
+npm start
+```
+
+后续只更新后端代码：
+
+```bash
+cd /opt/x-tg
+svn update
+npm install
+npm start
+```
+
+如果服务器没有 `svn` 命令，先安装：
+
+```bash
+apt update
+apt install -y subversion
+```
