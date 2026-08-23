@@ -177,36 +177,7 @@ function injectButtons(article) {
   processedArticles.add(article);
 }
 
-function injectLikesTab() {
-  if (document.querySelector('[data-xtu-likes-tab]')) return;
-  const pathParts = window.location.pathname.split('/').filter(Boolean);
-  if (!pathParts.length || pathParts[0] === 'i' || pathParts[0] === 'explore' || pathParts[0] === 'messages' || pathParts[0] === 'notifications') return;
-  const username = pathParts[0].replace(/^@/, '');
-  if (!username || pathParts[1] === 'status') return;
-  const tablist = [...document.querySelectorAll('[role="tablist"], nav')].find((element) => {
-    const links = [...element.querySelectorAll('a[href]')];
-    return links.some((link) => /\/(with_replies|media|video|reposts|retweets)(?:\?|$)/.test(link.getAttribute('href') || '') || link.getAttribute('href') === '/' + username);
-  });
-  if (!tablist) return;
-  const existingLikes = [...tablist.querySelectorAll('a[href]')].find((link) => /\/likes(?:\?|$)/.test(link.getAttribute('href') || ''));
-  if (existingLikes) return;
-  const source = [...tablist.querySelectorAll('a[role="tab"][href]')].find((link) => /\/(video|media|reposts|retweets|with_replies)(?:\?|$)/.test(link.getAttribute('href') || '')) || tablist.querySelector('a[role="tab"][href]');
-  if (!source) return;
-  const likes = source.cloneNode(true);
-  likes.setAttribute('href', '/' + username + '/likes');
-  likes.setAttribute('data-xtu-likes-tab', 'true');
-  likes.setAttribute('aria-label', '喜欢');
-  likes.removeAttribute('aria-current');
-  likes.querySelectorAll('[aria-hidden="true"]').forEach((node) => node.remove());
-  likes.textContent = '喜欢';
-  likes.setAttribute('role', 'tab');
-  source.parentElement?.insertAdjacentElement('afterend', likes);
-}
-
-function scanPage() {
-  injectLikesTab();
-  document.querySelectorAll('article').forEach(injectButtons);
-}
+function scanPage() { document.querySelectorAll('article').forEach(injectButtons); }
 new MutationObserver(scanPage).observe(document.body, { childList: true, subtree: true });
 scanPage();
 
