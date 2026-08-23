@@ -46,10 +46,30 @@ docker start telegram-bot-api
 
 ## 启动后端
 
-```powershell
-cd x-tg
+服务器只部署 `x-tg` 后端时，首次运行：
+
+```bash
+cd /opt
+svn checkout https://github.com/Assute/x-telegram/trunk/x-tg x-tg
+cd /opt/x-tg
 npm install
 npm start
+```
+
+后续更新后端代码：
+
+```bash
+cd /opt/x-tg
+svn update
+npm install
+npm start
+```
+
+如果服务器没有 `svn` 命令，先安装：
+
+```bash
+apt update
+apt install -y subversion
 ```
 
 编辑 `x-tg/.env`：
@@ -64,7 +84,6 @@ MAX_UPLOAD_BYTES=2147483648
 ```
 
 Bot 必须已经加入目标频道或群组，并具有发送媒体权限。
-
 ## 安装 Chrome 插件
 
 1. 先启动 Telegram Local Bot API 和 `x-tg` 后端。
@@ -118,3 +137,4 @@ npm start
 apt update
 apt install -y subversion
 ```
+
