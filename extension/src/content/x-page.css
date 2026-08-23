@@ -1,0 +1,13 @@
+.xtu-download-item { align-items: center !important; display: flex !important; flex: 0 0 34px !important; height: 34px !important; justify-content: center !important; margin: 0 !important; min-width: 34px !important; padding: 0 !important; position: relative !important; transform: none !important; }
+.xtu-download-button { align-items: center; background: transparent; border: 0; border-radius: 9999px; color: rgb(83, 100, 113); cursor: pointer; display: flex; flex: 0 0 34px; height: 34px; justify-content: center; line-height: 0; margin: 0 !important; padding: 0; position: relative; left: 0; top: 0; transform: none !important; transition: background-color 120ms ease, color 120ms ease; width: 34px; }
+.xtu-download-button svg { display: block; fill: currentColor; height: 20px; margin: 0; position: static; width: 20px; }
+.xtu-download-button:hover, .xtu-download-button:focus-visible { background: rgba(29, 155, 240, .1); color: rgb(29, 155, 240); outline: none; }
+.xtu-download-button[data-xtu-state="busy"] { color: rgb(29, 155, 240); cursor: wait; }
+.xtu-download-button[data-xtu-state="success"] { color: rgb(0, 186, 124); }
+.xtu-download-button[data-xtu-state="error"] { color: rgb(244, 33, 46); }
+
+.xtu-download-button[data-xtu-state="url"] { color: rgb(29, 155, 240); }
+.xtu-download-button[data-xtu-state="downloading"] { color: rgb(255, 126, 0); }
+.xtu-download-button[data-xtu-state="telegram"] { color: rgb(135, 90, 210); }
+.xtu-download-button svg.xtu-animated { animation: xtu-upload-pulse 900ms linear infinite; transform-origin: center; }
+@keyframes xtu-upload-pulse { 0% { opacity: .45; transform: scale(.88) rotate(0deg); } 50% { opacity: 1; transform: scale(1.08) rotate(8deg); } 100% { opacity: .45; transform: scale(.88) rotate(0deg); } }
